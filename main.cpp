@@ -6,7 +6,7 @@ using namespace std;
 int main(){
     bool salir_inicio = false, salir_juego;
     unsigned short int opc;
-    char* ptr = nullptr;
+    unsigned char* ptr = nullptr;
     unsigned int bytes_reservados;
 
     while(!salir_inicio){
