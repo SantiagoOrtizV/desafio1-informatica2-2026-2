@@ -55,6 +55,23 @@ void setFicha(unsigned char* arreglo, int indice, unsigned char valor){
     }
 }
 
+unsigned char getFicha(unsigned char* ptr, unsigned int indice){
+    unsigned char mascara = 7;
+    unsigned char valor;
+
+    unsigned int bit_inicio = indice * 3;
+    unsigned int byte = bit_inicio / 8;
+    unsigned int bit = bit_inicio % 8;
+
+    if(bit <= 5){
+        valor = (ptr[byte] >> (5 - bit)) & mascara;
+    } else {
+        valor = ((ptr[byte] << (bit - 5)) | (ptr[byte + 1] >> (13 - bit))) & mascara;
+    }
+
+    return valor;
+}
+
 void entrada_fila_columna(unsigned int &c, unsigned int &f){
     cout << "Ingrese el numero de columnas: ";
     cin >> c;
@@ -72,24 +89,10 @@ void reservacion_memoria(unsigned char *&ptr, unsigned int c, unsigned int f, un
 }
 
 void impresion_tablero_bits(unsigned char* ptr, unsigned int c, unsigned int f){
-    unsigned char mascara = 7;
-    unsigned char nprint;
-
-    for(unsigned int i=0; i<f; i++)
-    {
-        for(unsigned int j = 0; j<c; j++)
-        {
-            unsigned int posicion = i*c+j;
-            unsigned int bit_inicio = posicion*3;
-            unsigned int byte = bit_inicio/8;
-            unsigned int bit = bit_inicio%8;
-
-            if(bit <= 5){
-                nprint = (ptr[byte] >> (5 - bit)) & mascara;
-            }else{
-                nprint = ((ptr[byte] << (bit - 5)) | (ptr[byte + 1] >> (13 - bit))) & mascara;
-            }
-            cout << bitset<3>(nprint) << " ";
+    for(unsigned int i = 0; i < f; i++){
+        for(unsigned int j = 0; j < c; j++){
+            unsigned char valor = getFicha(ptr, i*c + j);
+            cout << bitset<3>(valor) << " ";
         }
         cout << endl;
     }
@@ -97,38 +100,16 @@ void impresion_tablero_bits(unsigned char* ptr, unsigned int c, unsigned int f){
 }
 
 void impresion_tablero(unsigned char* ptr, unsigned int c, unsigned int f){
-    unsigned char mascara = 7;
     unsigned char fichas[8] = {' ','!','#','@','$','?','*','^'};
-    unsigned char nprint;
 
-    for(unsigned int i=0, k=1; i<f; i++, k++){
-        cout << k << ' ';
-        for(unsigned int j = 0; j<c; j++){
-            unsigned int posicion = i*c+j;
-            unsigned int bit_inicio = posicion*3;
-            unsigned int byte = bit_inicio/8;
-            unsigned int bit = bit_inicio%8;
-
-            if(bit <= 5){
-                nprint = (ptr[byte] >> (5 - bit)) & mascara;
-            }else{
-                nprint = ((ptr[byte] << (bit - 5)) | (ptr[byte + 1] >> (13 - bit))) & mascara;
-            }
-            cout << fichas[nprint] << " ";
+    for(unsigned int i = 0; i < f; i++){
+        for(unsigned int j = 0; j < c; j++){
+            unsigned char valor = getFicha(ptr, i*c + j);
+            cout << fichas[valor] << " ";
         }
         cout << endl;
-        if(k==9){
-            k-=10;
-        }
     }
-    cout << "  ";
-    for(unsigned int i=1,j=1; i<=c; i++,j++){
-        cout << j << ' ';
-        if(j==9){
-            j-=10;
-        }
-    }
-    cout << endl << endl;
+    cout << endl;
 }
 
 
