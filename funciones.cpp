@@ -101,10 +101,9 @@ void impresion_tablero(unsigned char* ptr, unsigned int c, unsigned int f){
     unsigned char fichas[8] = {' ','!','#','@','$','?','*','^'};
     unsigned char nprint;
 
-    for(unsigned int i=0; i<f; i++)
-    {
-        for(unsigned int j = 0; j<c; j++)
-        {
+    for(unsigned int i=0, k=1; i<f; i++, k++){
+        cout << k << ' ';
+        for(unsigned int j = 0; j<c; j++){
             unsigned int posicion = i*c+j;
             unsigned int bit_inicio = posicion*3;
             unsigned int byte = bit_inicio/8;
@@ -118,8 +117,18 @@ void impresion_tablero(unsigned char* ptr, unsigned int c, unsigned int f){
             cout << fichas[nprint] << " ";
         }
         cout << endl;
+        if(k==9){
+            k-=10;
+        }
     }
-    cout << endl;
+    cout << "  ";
+    for(unsigned int i=1,j=1; i<=c; i++,j++){
+        cout << j << ' ';
+        if(j==9){
+            j-=10;
+        }
+    }
+    cout << endl << endl;
 }
 
 
@@ -144,18 +153,115 @@ void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, 
     //repetir desde detectar_combinaciones() hasta que no hayan mas
 }
 
+void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, unsigned int c, unsigned int f){
+    cout << "1) -ficha 2) +columna 3) +fila 4) -columna 5) -fila 6) salir" << endl;
+    do{
+        cout << ">> ";
+        cin >> opc;
+    }while(opc<1||opc>6);
+
+    switch(opc){
+
+    case 1:
+        cout << "Ingrese # de fila" << endl;
+        do{
+            cout << ">> ";
+            cin >> nc;
+        }while(nc<1||nc>c);
+        cout << "Ingrese # de columna" << endl;
+        do{
+            cout << ">> ";
+            cin >> nf;
+        }while(nf<1||nf>f);
+        break;
+
+    case 2:
+        cout << "Agregar nueva columna a la derecha de la columna #" << endl;
+        do{
+            cout << ">> ";
+            cin >> nc;
+        }while(nc<0||nc>c);
+        break;
+
+    case 3:
+        cout << "Agregar nueva fila a abajo de la fila #" << endl;
+        do{
+            cout << ">> ";
+            cin >> nf;
+        }while(nf<0||nf>f);
+        break;
+
+    case 4:
+        cout << "Eliminar columna #" << endl;
+        do{
+            cout << ">> ";
+            cin >> nc;
+        }while(nc<1||nc>c);
+        break;
+
+    case 5:
+        cout << "Eliminar fila #" << endl;
+        do{
+            cout << ">> ";
+            cin >> nf;
+        }while(nf<1||nf>f);
+        break;
+    }
+}
+
+void quitar_ficha(unsigned char *ptr, unsigned int nc, unsigned int nf){
+    cout << "quitar_ficha" << endl;
+    cout << nc << " " << nf << endl;
+}
+
+void agregar_columna(unsigned char *ptr, unsigned int nc){
+    cout << "agregar_columna" << endl;
+    cout << nc << endl;
+}
+
+void agregar_fila(unsigned char *ptr, unsigned int nf){
+    cout << "agregar_fila" << endl;
+    cout << nf << endl;
+}
+
+void quitar_columna(unsigned char *ptr, unsigned int nc){
+    cout << "quitar_columna" << endl;
+    cout << nc << endl;
+}
+
+void quitar_fila(unsigned char *ptr, unsigned int nf){
+    cout << "quitar_fila" << endl;
+    cout << nf << endl;
+}
+
 void turno(bool &salir_juego, unsigned int c, unsigned int f, unsigned char *&ptr, unsigned int &bytes_reservados){
+    unsigned short int opc;
+    unsigned int nc, nf;
     impresion_tablero_bits(ptr, c, f);
     impresion_tablero(ptr, c, f);
-    //entrada_usuario()
+    entrada_usuario(opc, nc, nf, c, f);
 
-    //case opciones disponibles()
-
-    //quitar_columna()
-    //agregar_columna()
-    //quitar_fila()
-    //agregar_columna()
-    //quitar_ficha()
+    switch(opc){
+    case 1:
+        quitar_ficha(ptr, nc, nf);
+        break;
+    case 2:
+        agregar_columna(ptr, nc);
+        break;
+    case 3:
+        agregar_fila(ptr, nf);
+        break;
+    case 4:
+        quitar_columna(ptr, nc);
+        break;
+    case 5:
+        quitar_fila(ptr, nf);
+        break;
+    case 6:
+        salir_juego = true;
+        break;
+    }
+    cout << endl;
 
     //detectar_combinaciones(ptr, m, n, combinaciones)
     //caida_fichas(ptr, m, n)

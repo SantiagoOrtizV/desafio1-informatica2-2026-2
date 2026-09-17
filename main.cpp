@@ -23,7 +23,7 @@ int main(){
             salir_juego = false;
             inicializacion_juego(c, f, ptr, bytes_reservados);
             while(!salir_juego){
-                //turno(salir_juego, c, f, ptr, bytes_reservados);
+                turno(salir_juego, c, f, ptr, bytes_reservados);
             }
             delete ptr;
             ptr = nullptr;
