@@ -72,6 +72,167 @@ unsigned char getFicha(unsigned char* ptr, unsigned int indice){
     return valor;
 }
 
+bool detectar_horizontal(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado) {
+    bool hubo_combinacion = false;
+    for(unsigned int i = 0; i < f; i++){
+
+        unsigned char valor_actual = getFicha(ptr, i*c + 0);
+        unsigned int col_inicio = 0;
+        unsigned int contador = 1;
+
+        for(unsigned int j = 1; j < c; j++){
+            unsigned char valor_j = getFicha(ptr, i*c + j);
+
+            if(valor_j == valor_actual){
+                contador++;
+            }
+            else{
+                if(contador >= 3){
+                    for(unsigned int k = 0; k < contador; k++){
+                        unsigned int col_actual = col_inicio + k;
+                        unsigned int indice = i*c + col_actual;
+                        //cout << "Fichas eliminadas desde horizontal: "<<contador<<endl;
+                        marcado[indice] = true;
+                    }
+                    hubo_combinacion = true;
+                }
+                valor_actual = valor_j;
+                col_inicio = j;
+                contador = 1;
+            }
+        }
+
+        if(contador >= 3){
+            for(unsigned int k = 0; k < contador; k++){
+                unsigned int col_actual = col_inicio + k;
+                unsigned int indice = i*c + col_actual;
+                //cout << "Fichas eliminadas desde horizontal: "<<contador<<endl;
+                marcado[indice] = true;
+            }
+            hubo_combinacion = true;
+        }
+    }
+
+    return hubo_combinacion;
+}
+
+bool detectar_vertical(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado) {
+    bool hubo_combinacion = false;
+    for(unsigned int j = 0; j < c; j++){
+
+        unsigned char valor_actual = getFicha(ptr, 0*c + j);
+        unsigned int fila_inicio = 0;
+        unsigned int contador = 1;
+
+        for(unsigned int i = 1; i < f; i++){
+            unsigned char valor_i = getFicha(ptr, i*c + j);
+
+            if(valor_i == valor_actual){
+                contador++;
+            }
+            else{
+                if(contador >= 3){
+                    for(unsigned int k = 0; k < contador; k++){
+                        unsigned int fila_actual = fila_inicio + k;
+                        unsigned int indice = fila_actual*c + j;
+                        //cout << "Fichas eliminadas desde vertical: "<<contador<<endl;
+                        marcado[indice] = true;
+                    }
+                    hubo_combinacion = true;
+                }
+                valor_actual = valor_i;
+                fila_inicio = i;
+                contador = 1;
+            }
+        }
+
+        if(contador >= 3){
+            for(unsigned int k = 0; k < contador; k++){
+                unsigned int fila_actual = fila_inicio + k;
+                unsigned int indice = fila_actual*c + j;
+                marcado[indice] = true;
+                //cout << "Fichas eliminadas desde vertical: "<<contador<<endl;
+            }
+            hubo_combinacion = true;
+        }
+
+    }
+
+    return hubo_combinacion;
+}
+
+void aplicar_eliminaciones(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado) {
+    for(unsigned int indice = 0; indice < f*c; indice++){
+        if(marcado[indice]){
+            setFicha(ptr, indice, 0); // 0 = espacio vacio
+        }
+    }
+}
+
+void rellenar_columna(unsigned char* ptr, unsigned int c, unsigned int j, int fila_destino) {
+    for(int fila = 0; fila <= fila_destino; fila++){
+        unsigned int indice = fila*c + j;
+        unsigned char ficha_nueva = generar_ficha(1,6);
+        setFicha(ptr, indice, ficha_nueva);
+    }
+}
+
+void bajar_fichas_columna(unsigned char* ptr, unsigned int f, unsigned int c, unsigned int j) {
+    int fila_origen = f - 1; //empezamos a recorrer de abajo hacía arriba
+    int fila_destino = f - 1;   //empezamos a recorrer de abajo hacía arriba
+
+    while(fila_origen >= 0) { //condicion parada, si no hay mas fichas que bajar para el ciclo
+        unsigned int indice = fila_origen*c + j; //buscamos en esa columna
+        unsigned char ficha_actual = getFicha(ptr, indice); //en esa columna traemos el valor de la última fila de esa columa con getFicha
+
+        if(ficha_actual != 0){ //si no hay espacio vacío
+            unsigned int indice_destino = fila_destino*c + j; //calculo indice destino usando fila_destino, o sea, la  fila de esa columna donde el vlor es 0
+            setFicha(ptr, indice_destino, ficha_actual);       //pongo en esa posición donde había un 0, pongo el valor de la ficha de arriba
+
+            if(fila_origen != fila_destino){ //solo ponemos la casilla en 0 si el indice de las filas es diferente, este es el caso donde toda la columna si está bien rellena
+                unsigned int indice_origen = fila_origen*c + j;
+                setFicha(ptr, indice_origen, 0);
+            }
+
+            fila_origen--; //subimos de fila
+            fila_destino--; // subimos de fila
+        }
+        else{
+            fila_origen--;
+        }
+
+    }
+    rellenar_columna(ptr,c,j,fila_destino);
+}
+
+
+void bajar_fichas(unsigned char* ptr, unsigned int f, unsigned int c) {
+    for(unsigned int col = 0; col < c; col++){ //itero en todas las columnas, por cada una de ellas llamo a la funcion que las organiza
+        bajar_fichas_columna(ptr, f, c, col);
+    }
+}
+
+void procesar_combinaciones(unsigned char* ptr, unsigned int f, unsigned int c) { //funcion que procesa todas las combinaciones, sobreescribe el tablero, bajas las fichas
+    //y las rellena, se ejecuta siempre que haya mínimo una combinacion
+    bool* marcado = new bool[f*c];
+    bool hubo_combinacion;
+
+    do {
+        for(unsigned int i = 0; i < f*c; i++) marcado[i] = false;
+
+        bool h = detectar_horizontal(ptr, f, c, marcado);
+        bool v = detectar_vertical(ptr, f, c, marcado);
+        hubo_combinacion = h || v;
+
+        aplicar_eliminaciones(ptr, f, c, marcado);
+        bajar_fichas(ptr, f, c);
+
+    } while(hubo_combinacion);
+
+    delete[] marcado;
+    marcado = nullptr;
+}
+
 void entrada_fila_columna(unsigned int &c, unsigned int &f){
     cout << "Ingrese el numero de columnas: ";
     cin >> c;
@@ -101,15 +262,27 @@ void impresion_tablero_bits(unsigned char* ptr, unsigned int c, unsigned int f){
 
 void impresion_tablero(unsigned char* ptr, unsigned int c, unsigned int f){
     unsigned char fichas[8] = {' ','!','#','@','$','?','*','^'};
+    unsigned short int nf = 1, nc = 1;
 
-    for(unsigned int i = 0; i < f; i++){
-        for(unsigned int j = 0; j < c; j++){
+    for(unsigned int i=0; i<f; i++, nf++){
+        cout << nf << " ";
+        for(unsigned int j=0; j<c; j++){
             unsigned char valor = getFicha(ptr, i*c + j);
             cout << fichas[valor] << " ";
         }
         cout << endl;
+        if(nf==9){
+            nf-=10;
+        }
     }
-    cout << endl;
+    cout << "  ";
+    for (unsigned int i=0; i<c; i++, nc++){
+        cout << nc << " ";
+        if(nc==9){
+            nc-=10;
+        }
+    }
+    cout << endl << endl;
 }
 
 
@@ -122,11 +295,9 @@ void generacion_inicial_aleatorio(unsigned char* ptr,unsigned int c, unsigned in
 void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, unsigned int &bytes_reservados){
     entrada_fila_columna(c,f);
     reservacion_memoria(ptr, c, f, bytes_reservados);
-    //cout << static_cast<void*>(ptr) << endl;
     generacion_inicial_aleatorio(ptr, c, f);
-    //detectar_combinaciones(ptr, m, n, combinaciones)
-    //caida_fichas(ptr, m, n) -> dentro deberia generar de una vez ficha_aleatoria
-    //repetir desde detectar_combinaciones() hasta que no hayan mas
+
+    procesar_combinaciones(ptr, f, c);
 }
 
 void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, unsigned int c, unsigned int f){
@@ -249,6 +420,7 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
         salir_juego = true;
         break;
     }
+    procesar_combinaciones(ptr, f, c);
     cout << endl;
 
     //detectar_combinaciones(ptr, m, n, combinaciones)
