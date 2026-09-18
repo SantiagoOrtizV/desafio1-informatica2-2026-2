@@ -123,19 +123,14 @@ void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, 
     entrada_fila_columna(c,f);
     reservacion_memoria(ptr, c, f, bytes_reservados);
     //cout << static_cast<void*>(ptr) << endl;
-    impresion_tablero_bits(ptr, c, f);
-    impresion_tablero(ptr, c, f);
     generacion_inicial_aleatorio(ptr, c, f);
-    impresion_tablero_bits(ptr, c, f);
-    impresion_tablero(ptr, c, f);
-
     //detectar_combinaciones(ptr, m, n, combinaciones)
     //caida_fichas(ptr, m, n) -> dentro deberia generar de una vez ficha_aleatoria
     //repetir desde detectar_combinaciones() hasta que no hayan mas
 }
 
 void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, unsigned int c, unsigned int f){
-    cout << "1) -ficha 2) +columna 3) +fila 4) -columna 5) -fila 6) salir" << endl;
+    cout << "1) -ficha // 2) +columna // 3) +fila  // 4) -columna // 5) -fila // 6) salir" << endl;
     do{
         cout << ">> ";
         cin >> opc;
@@ -205,17 +200,29 @@ void agregar_fila(unsigned char *ptr, unsigned int nf){
     cout << nf << endl;
 }
 
-void quitar_columna(unsigned char *ptr, unsigned int nc){
-    cout << "quitar_columna" << endl;
-    cout << nc << endl;
+void quitar_columna(unsigned char *ptr, unsigned int nc, unsigned int &c, unsigned int &f){
+    if (nc == 0) {
+        return;
+    }
+    unsigned int indice_elemento_1_columna = nc-1, indice_elemento_1_columna_siguiente = nc;
+    for (unsigned int j=0; j<f; j++){
+        for(unsigned int i=0; i<c-1; i++, indice_elemento_1_columna++, indice_elemento_1_columna_siguiente++){
+            setFicha(ptr, indice_elemento_1_columna, getFicha(ptr, indice_elemento_1_columna_siguiente));
+        }
+        indice_elemento_1_columna_siguiente++;
+    }
+    c--;
 }
 
-void quitar_fila(unsigned char *ptr, unsigned int nf){
-    cout << "quitar_fila" << endl;
-    cout << nf << endl;
+void quitar_fila(unsigned char *ptr, unsigned int nf, unsigned int &c, unsigned int &f){
+    for(unsigned int indice_elemento_1_fila = (nf-1)*c, indice_elemento_1_fila_siguiente = (nf)*c;
+        indice_elemento_1_fila<=f*c; indice_elemento_1_fila++,indice_elemento_1_fila_siguiente++){
+        setFicha(ptr, indice_elemento_1_fila,getFicha(ptr, indice_elemento_1_fila_siguiente));
+    }
+    f--;
 }
 
-void turno(bool &salir_juego, unsigned int c, unsigned int f, unsigned char *&ptr, unsigned int &bytes_reservados){
+void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&ptr, unsigned int &bytes_reservados){
     unsigned short int opc;
     unsigned int nc, nf;
     impresion_tablero_bits(ptr, c, f);
@@ -233,10 +240,10 @@ void turno(bool &salir_juego, unsigned int c, unsigned int f, unsigned char *&pt
         agregar_fila(ptr, nf);
         break;
     case 4:
-        quitar_columna(ptr, nc);
+        quitar_columna(ptr, nc, c, f);
         break;
     case 5:
-        quitar_fila(ptr, nf);
+        quitar_fila(ptr, nf, c, f);
         break;
     case 6:
         salir_juego = true;
