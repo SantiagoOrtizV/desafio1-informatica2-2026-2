@@ -72,16 +72,17 @@ unsigned char getFicha(unsigned char* ptr, unsigned int indice){
     return valor;
 }
 
-bool detectar_horizontal(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado) {
+bool detectar_horizontal(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado, unsigned int &total_comb_detec) {
     bool hubo_combinacion = false;
-    for(unsigned int i = 0; i < f; i++){
+    for(unsigned int i = 0; i < f; i++){ //este ciclo itera en las filas del tablero, coge siempre el primer
+        //caracter de esa fila para comparar con los siguiente, por eso contador siempre se reinica a 1 cada vuelta
 
-        unsigned char valor_actual = getFicha(ptr, i*c + 0);
+        unsigned char valor_actual = getFicha(ptr, i*c + 0); //cogemos siempre la primera ficha de cada fila
         unsigned int col_inicio = 0;
         unsigned int contador = 1;
 
-        for(unsigned int j = 1; j < c; j++){
-            unsigned char valor_j = getFicha(ptr, i*c + j);
+        for(unsigned int j = 1; j < c; j++){ //empezamos en la columna 1
+            unsigned char valor_j = getFicha(ptr, i*c + j); //cogemos la ficha de esa columna (empieza desde columna 1)
 
             if(valor_j == valor_actual){
                 contador++;
@@ -94,6 +95,7 @@ bool detectar_horizontal(unsigned char* ptr, unsigned int f, unsigned int c, boo
                         //cout << "Fichas eliminadas desde horizontal: "<<contador<<endl;
                         marcado[indice] = true;
                     }
+                    total_comb_detec += 1;
                     hubo_combinacion = true;
                 }
                 valor_actual = valor_j;
@@ -109,6 +111,7 @@ bool detectar_horizontal(unsigned char* ptr, unsigned int f, unsigned int c, boo
                 //cout << "Fichas eliminadas desde horizontal: "<<contador<<endl;
                 marcado[indice] = true;
             }
+            total_comb_detec += 1;
             hubo_combinacion = true;
         }
     }
@@ -116,7 +119,7 @@ bool detectar_horizontal(unsigned char* ptr, unsigned int f, unsigned int c, boo
     return hubo_combinacion;
 }
 
-bool detectar_vertical(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado) {
+bool detectar_vertical(unsigned char* ptr, unsigned int f, unsigned int c, bool* marcado, unsigned int &total_comb_detec) {
     bool hubo_combinacion = false;
     for(unsigned int j = 0; j < c; j++){
 
@@ -138,6 +141,7 @@ bool detectar_vertical(unsigned char* ptr, unsigned int f, unsigned int c, bool*
                         //cout << "Fichas eliminadas desde vertical: "<<contador<<endl;
                         marcado[indice] = true;
                     }
+                    total_comb_detec += 1;
                     hubo_combinacion = true;
                 }
                 valor_actual = valor_i;
@@ -153,6 +157,7 @@ bool detectar_vertical(unsigned char* ptr, unsigned int f, unsigned int c, bool*
                 marcado[indice] = true;
                 //cout << "Fichas eliminadas desde vertical: "<<contador<<endl;
             }
+            total_comb_detec += 1;
             hubo_combinacion = true;
         }
 
@@ -212,26 +217,46 @@ void bajar_fichas(unsigned char* ptr, unsigned int f, unsigned int c) {
     }
 }
 
-void procesar_combinaciones(unsigned char* ptr, unsigned int f, unsigned int c) { //funcion que procesa todas las combinaciones, sobreescribe el tablero, bajas las fichas
+void procesar_combinaciones(unsigned char* ptr, unsigned int f, unsigned int c, unsigned int &total_fichas_elim, unsigned int &total_comb_detec) { //funcion que procesa todas las combinaciones, sobreescribe el tablero, bajas las fichas
     //y las rellena, se ejecuta siempre que haya mínimo una combinacion
+    //tambien dará el puntaje
+
     bool* marcado = new bool[f*c];
     bool hubo_combinacion;
 
     do {
         for(unsigned int i = 0; i < f*c; i++) marcado[i] = false;
 
-        bool h = detectar_horizontal(ptr, f, c, marcado);
-        bool v = detectar_vertical(ptr, f, c, marcado);
+        bool h = detectar_horizontal(ptr, f, c, marcado, total_comb_detec);
+        bool v = detectar_vertical(ptr, f, c, marcado, total_comb_detec);
         hubo_combinacion = h || v;
 
         aplicar_eliminaciones(ptr, f, c, marcado);
+
+        //calculo cantidad de fichas eliminadas en total y cantidad de combinaciones
+        for(unsigned int i = 0;i < (f*c);i++){
+            if(marcado[i]){ //si hay un true marcado en el arreglo, significa que
+                total_fichas_elim += 1;
+            }
+
+        }
+
         bajar_fichas(ptr, f, c);
 
     } while(hubo_combinacion);
 
+
+    //cantidad de eliminaciones realizadas por ususario ->cada vez que se invoque la opcion de eliminar ficha
+
     delete[] marcado;
-    marcado = nullptr;
 }
+
+void puntaje(unsigned int &total_fichas_elim, unsigned int &total_comb_detec){
+    cout << "Total fichas eliminadas hasta el momento: "<<total_fichas_elim<<endl
+         <<"Total combinaciones detectadas: "<< total_comb_detec<<endl;
+
+}
+
 
 void entrada_fila_columna(unsigned int &c, unsigned int &f){
     cout << "Ingrese el numero de columnas: ";
@@ -292,12 +317,13 @@ void generacion_inicial_aleatorio(unsigned char* ptr,unsigned int c, unsigned in
     }
 }
 
-void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, unsigned int &bytes_reservados){
+void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, unsigned int &bytes_reservados, unsigned int &total_fichas_elim, unsigned int &total_comb_detec){
     entrada_fila_columna(c,f);
     reservacion_memoria(ptr, c, f, bytes_reservados);
     generacion_inicial_aleatorio(ptr, c, f);
 
-    procesar_combinaciones(ptr, f, c);
+    procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec);
+    puntaje(total_fichas_elim, total_comb_detec);
 }
 
 void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, unsigned int c, unsigned int f){
@@ -496,12 +522,13 @@ void espacio_65(unsigned char*&ptr, unsigned int &bytes_reservados, unsigned int
     }
 }
 
-void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&ptr, unsigned int &bytes_reservados){
+void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&ptr, unsigned int &bytes_reservados, unsigned int &total_fichas_elim, unsigned int &total_comb_detec){
     unsigned short int opc;
     unsigned int nc, nf;
     impresion_tablero_bits(ptr, c, f);
     impresion_tablero(ptr, c, f);
     entrada_usuario(opc, nc, nf, c, f);
+    //puntaje(total_fichas_elim, total_comb_detec);
 
     switch(opc){
     case 1:
@@ -525,6 +552,7 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
         salir_juego = true;
         break;
     }
-    procesar_combinaciones(ptr, f, c);
+    procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec);
+    puntaje(total_fichas_elim, total_comb_detec);
     cout << endl;
 }
