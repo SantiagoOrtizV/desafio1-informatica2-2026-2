@@ -413,13 +413,13 @@ void agregar_columna(unsigned char *&ptr, unsigned int nc, unsigned int &c, unsi
         unsigned int ultimo_elemento = (c*f)-1;
         unsigned int nIzq = f;
         for(unsigned int i=c-nc; i>0; i--, ultimo_elemento--){
-            setFicha(ptr, ultimo_elemento+nIzq, ultimo_elemento);
+            setFicha(ptr, ultimo_elemento+nIzq, getFicha(ptr, ultimo_elemento));
         }
         nIzq--;
         for(unsigned int i=0; i<f-1; i++, nIzq--){
             setFicha(ptr, ultimo_elemento+nIzq+1, generar_ficha(1,6));
             for(unsigned int j=0; j<c; j++, ultimo_elemento--){
-                setFicha(ptr, ultimo_elemento+nIzq, ultimo_elemento);
+                setFicha(ptr, ultimo_elemento+nIzq, getFicha(ptr, ultimo_elemento));
             }
         }
         setFicha(ptr, ultimo_elemento+1, generar_ficha(1,6));
@@ -456,7 +456,7 @@ void agregar_fila(unsigned char *&ptr, unsigned int nf, unsigned int c, unsigned
     if(disponibilidad_bytes){
         unsigned int ultimo_elemento = (c*f)-1;
         for(unsigned int i=0; i<(f-nf)*c; i++, ultimo_elemento--){
-            setFicha(ptr, ultimo_elemento+c, ultimo_elemento);
+            setFicha(ptr, ultimo_elemento+c, getFicha(ptr, ultimo_elemento));
         }
         for(unsigned int i=1; i<=c; i++){
             setFicha(ptr, ultimo_elemento+i, generar_ficha(1,6));
