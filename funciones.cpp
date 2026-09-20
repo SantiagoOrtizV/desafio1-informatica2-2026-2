@@ -301,7 +301,7 @@ void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, 
 }
 
 void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, unsigned int c, unsigned int f){
-    cout << "1) -ficha // 2) +columna // 3) +fila  // 4) -columna // 5) -fila // 6) salir" << endl;
+    cout << "1) -ficha // 2) +columna // 3) +fila // 4) -columna // 5) -fila // 6) salir" << endl;
     do{
         cout << ">> ";
         cin >> opc;
@@ -310,12 +310,12 @@ void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, 
     switch(opc){
 
     case 1:
-        cout << "Ingrese # de fila" << endl;
+        cout << "Ingrese # de columna" << endl;
         do{
             cout << ">> ";
             cin >> nc;
         }while(nc<1||nc>c);
-        cout << "Ingrese # de columna" << endl;
+        cout << "Ingrese # de fila" << endl;
         do{
             cout << ">> ";
             cin >> nf;
@@ -356,19 +356,103 @@ void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, 
     }
 }
 
-void quitar_ficha(unsigned char *ptr, unsigned int nc, unsigned int nf){
-    cout << "quitar_ficha" << endl;
-    cout << nc << " " << nf << endl;
+void quitar_ficha(unsigned char *ptr, unsigned int nc, unsigned int nf, unsigned int c, unsigned int f){
+    nc--; nf--;
+    setFicha(ptr, (nf*c)+nc, 0);
+    for(unsigned int i=nf; i>0; i--){
+        setFicha(ptr, (i*c)+nc, getFicha(ptr,((i-1)*c)+nc));
+    }
+    setFicha(ptr, nc, generar_ficha(1,6));
 }
 
-void agregar_columna(unsigned char *ptr, unsigned int nc){
-    cout << "agregar_columna" << endl;
-    cout << nc << endl;
+void suficiente_espacio(unsigned char *ptr, unsigned int c, unsigned int f, unsigned int bytes_reservados, bool &disponibilidad_bytes, unsigned int &bytes_necesarios){
+    unsigned int bits_reservados = bytes_reservados*8;
+    int bits_utilizados = c*f*3;
+    if(bits_reservados>=bits_utilizados){
+        disponibilidad_bytes = true;
+    }else{
+        bytes_necesarios = bits_utilizados/8;
+        if(bits_utilizados%8!=0){
+            bytes_necesarios++;
+        }
+        disponibilidad_bytes = false;
+    }
 }
 
-void agregar_fila(unsigned char *ptr, unsigned int nf){
-    cout << "agregar_fila" << endl;
-    cout << nf << endl;
+void agregar_columna(unsigned char *&ptr, unsigned int nc, unsigned int &c, unsigned int f, unsigned int &bytes_reservados){
+    unsigned int bytes_necesarios;
+    bool disponibilidad_bytes;
+    suficiente_espacio(ptr, c+1, f, bytes_reservados, disponibilidad_bytes, bytes_necesarios);
+    if(disponibilidad_bytes){
+        unsigned int ultimo_elemento = (c*f)-1;
+        unsigned int nIzq = f;
+        for(unsigned int i=c-nc; i>0; i--, ultimo_elemento--){
+            setFicha(ptr, ultimo_elemento+nIzq, ultimo_elemento);
+        }
+        nIzq--;
+        for(unsigned int i=0; i<f-1; i++, nIzq--){
+            setFicha(ptr, ultimo_elemento+nIzq+1, generar_ficha(1,6));
+            for(unsigned int j=0; j<c; j++, ultimo_elemento--){
+                setFicha(ptr, ultimo_elemento+nIzq, ultimo_elemento);
+            }
+        }
+        setFicha(ptr, ultimo_elemento+1, generar_ficha(1,6));
+    } else{
+        unsigned char *ptr2 = new unsigned char[bytes_necesarios];
+        unsigned int ultimo_elemento = (c*f)-1;
+        unsigned int nIzq = f;
+        for(unsigned int i=c-nc; i>0; i--, ultimo_elemento--){
+            setFicha(ptr2, ultimo_elemento+nIzq, getFicha(ptr,ultimo_elemento));
+        }
+        nIzq--;
+        for(unsigned int i=0; i<f-1; i++, nIzq--){
+            setFicha(ptr2, ultimo_elemento+nIzq+1, generar_ficha(1,6));
+            for(unsigned int j=0; j<c; j++, ultimo_elemento--){
+                setFicha(ptr2, ultimo_elemento+nIzq, getFicha(ptr,ultimo_elemento));
+            }
+        }
+        setFicha(ptr2, ultimo_elemento+1, generar_ficha(1,6));
+        for(unsigned int i=nc; i>0; i--, ultimo_elemento--){
+            setFicha(ptr2, ultimo_elemento, getFicha(ptr,ultimo_elemento));
+        }
+        delete[] ptr;
+        ptr = ptr2;
+        ptr2 = nullptr;
+        bytes_reservados = bytes_necesarios;
+    }
+    c++;
+}
+
+void agregar_fila(unsigned char *&ptr, unsigned int nf, unsigned int c, unsigned int &f, unsigned int &bytes_reservados){
+    unsigned int bytes_necesarios;
+    bool disponibilidad_bytes;
+    suficiente_espacio(ptr, c, f+1, bytes_reservados, disponibilidad_bytes, bytes_necesarios);
+    if(disponibilidad_bytes){
+        unsigned int ultimo_elemento = (c*f)-1;
+        for(unsigned int i=0; i<(f-nf)*c; i++, ultimo_elemento--){
+            setFicha(ptr, ultimo_elemento+c, ultimo_elemento);
+        }
+        for(unsigned int i=1; i<=c; i++){
+            setFicha(ptr, ultimo_elemento+i, generar_ficha(1,6));
+        }
+    }else{
+        unsigned char *ptr2 = new unsigned char[bytes_necesarios];
+        unsigned int ultimo_elemento = (c*f)-1;
+        for(unsigned int i=0; i<(f-nf)*c; i++, ultimo_elemento--){
+            setFicha(ptr2, ultimo_elemento+c, getFicha(ptr, ultimo_elemento));
+        }
+        for(unsigned int i=1; i<=c; i++){
+            setFicha(ptr2, ultimo_elemento+i, generar_ficha(1,6));
+        }
+        for(unsigned int i=0; i<nf*c; i++, ultimo_elemento--){
+            setFicha(ptr2, ultimo_elemento, getFicha(ptr, ultimo_elemento));
+        }
+        delete[] ptr;
+        ptr = ptr2;
+        ptr2 = nullptr;
+        bytes_reservados = bytes_necesarios;
+    }
+    f++;
 }
 
 void quitar_columna(unsigned char *ptr, unsigned int nc, unsigned int &c, unsigned int &f){
@@ -388,9 +472,28 @@ void quitar_columna(unsigned char *ptr, unsigned int nc, unsigned int &c, unsign
 void quitar_fila(unsigned char *ptr, unsigned int nf, unsigned int &c, unsigned int &f){
     for(unsigned int indice_elemento_1_fila = (nf-1)*c, indice_elemento_1_fila_siguiente = (nf)*c;
         indice_elemento_1_fila<=f*c; indice_elemento_1_fila++,indice_elemento_1_fila_siguiente++){
-        setFicha(ptr, indice_elemento_1_fila,getFicha(ptr, indice_elemento_1_fila_siguiente));
+        setFicha(ptr, indice_elemento_1_fila, getFicha(ptr, indice_elemento_1_fila_siguiente));
     }
     f--;
+}
+
+void espacio_65(unsigned char*&ptr, unsigned int &bytes_reservados, unsigned int c, unsigned int f){
+    unsigned int bits_reservados = bytes_reservados*8;
+    unsigned int bits_utilizados = c*f*3;
+    if(bits_reservados*0.65>bits_utilizados){
+        unsigned int bytes_necesarios = bits_utilizados/8;
+        if(bits_utilizados%8!=0){
+            bytes_necesarios++;
+        }
+        unsigned char* ptr2 = new unsigned char[bytes_necesarios];
+        for(unsigned int i=0;i<c*f;i++){
+            setFicha(ptr2, i, getFicha(ptr, i));
+        }
+        bytes_reservados = bytes_necesarios;
+        delete[] ptr;
+        ptr = ptr2;
+        ptr2 = nullptr;
+    }
 }
 
 void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&ptr, unsigned int &bytes_reservados){
@@ -402,19 +505,21 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
 
     switch(opc){
     case 1:
-        quitar_ficha(ptr, nc, nf);
+        quitar_ficha(ptr, nc, nf, c, f);
         break;
     case 2:
-        agregar_columna(ptr, nc);
+        agregar_columna(ptr, nc, c, f, bytes_reservados);
         break;
     case 3:
-        agregar_fila(ptr, nf);
+        agregar_fila(ptr, nf, c, f, bytes_reservados);
         break;
     case 4:
         quitar_columna(ptr, nc, c, f);
+        espacio_65(ptr, bytes_reservados, c, f);
         break;
     case 5:
         quitar_fila(ptr, nf, c, f);
+        espacio_65(ptr, bytes_reservados, c, f);
         break;
     case 6:
         salir_juego = true;
@@ -422,8 +527,4 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
     }
     procesar_combinaciones(ptr, f, c);
     cout << endl;
-
-    //detectar_combinaciones(ptr, m, n, combinaciones)
-    //caida_fichas(ptr, m, n)
-    //repetir desde detectar_combinaciones() hasta que no hayan mas
 }
