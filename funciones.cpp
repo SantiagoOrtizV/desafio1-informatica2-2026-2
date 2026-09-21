@@ -217,18 +217,34 @@ void bajar_fichas(unsigned char* ptr, unsigned int f, unsigned int c) {
     }
 }
 
-void procesar_combinaciones(unsigned char* ptr, unsigned int f, unsigned int c, unsigned int &total_fichas_elim, unsigned int &total_comb_detec) { //funcion que procesa todas las combinaciones, sobreescribe el tablero, bajas las fichas
+void procesar_combinaciones(unsigned char* ptr, unsigned int f, unsigned int c, unsigned int &total_fichas_elim, unsigned int &total_comb_detec,
+                            unsigned int &cascadas, unsigned int &puntaje_total) {
+    //funcion que procesa todas las combinaciones, sobreescribe el tablero, bajas las fichas
     //y las rellena, se ejecuta siempre que haya mínimo una combinacion
     //tambien dará el puntaje
 
     bool* marcado = new bool[f*c];
-    bool hubo_combinacion;
+    bool hubo_combinacion = false;
 
     do {
         for(unsigned int i = 0; i < f*c; i++) marcado[i] = false;
 
+        if(hubo_combinacion){
+            cascadas++;
+            puntaje_total += 5;
+        }
+
+
         bool h = detectar_horizontal(ptr, f, c, marcado, total_comb_detec);
         bool v = detectar_vertical(ptr, f, c, marcado, total_comb_detec);
+
+        if(h){
+            puntaje_total += 1;
+        }
+        if(v){
+            puntaje_total += 1;
+        }
+
         hubo_combinacion = h || v;
 
         aplicar_eliminaciones(ptr, f, c, marcado);
@@ -238,22 +254,21 @@ void procesar_combinaciones(unsigned char* ptr, unsigned int f, unsigned int c, 
             if(marcado[i]){ //si hay un true marcado en el arreglo, significa que
                 total_fichas_elim += 1;
             }
-
         }
 
         bajar_fichas(ptr, f, c);
 
     } while(hubo_combinacion);
 
-
-    //cantidad de eliminaciones realizadas por ususario ->cada vez que se invoque la opcion de eliminar ficha
-
     delete[] marcado;
 }
 
-void puntaje(unsigned int &total_fichas_elim, unsigned int &total_comb_detec){
-    cout << "Total fichas eliminadas hasta el momento: "<<total_fichas_elim<<endl
-         <<"Total combinaciones detectadas: "<< total_comb_detec<<endl;
+void puntaje(unsigned int &total_fichas_elim, unsigned int &total_comb_detec, unsigned int &cascadas, unsigned int &cant_elim, unsigned int &puntaje_total){
+    cout << "Total fichas eliminadas: "<<total_fichas_elim<<endl
+         <<"Total combinaciones detectadas: "<< total_comb_detec<<endl
+         <<"Cascadas generadas por la jugada: "<<cascadas<<endl
+         <<"Total eliminaciones hechas: "<< cant_elim<<endl
+         <<"PUNTAJE: "<<puntaje_total<<endl;
 
 }
 
@@ -288,6 +303,7 @@ void impresion_tablero_bits(unsigned char* ptr, unsigned int c, unsigned int f){
 void impresion_tablero(unsigned char* ptr, unsigned int c, unsigned int f){
     unsigned char fichas[8] = {' ','!','#','@','$','?','*','^'};
     unsigned short int nf = 1, nc = 1;
+    cout << "TABLERO: "<<f<<"X"<<c<<endl;
 
     for(unsigned int i=0; i<f; i++, nf++){
         cout << nf << " ";
@@ -317,13 +333,15 @@ void generacion_inicial_aleatorio(unsigned char* ptr,unsigned int c, unsigned in
     }
 }
 
-void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, unsigned int &bytes_reservados, unsigned int &total_fichas_elim, unsigned int &total_comb_detec){
+void inicializacion_juego(unsigned int &c, unsigned int &f,unsigned char *&ptr, unsigned int &bytes_reservados,
+                          unsigned int &total_fichas_elim, unsigned int &total_comb_detec, unsigned int &cascadas, unsigned int &cant_elim, unsigned int &puntaje_total){
     entrada_fila_columna(c,f);
     reservacion_memoria(ptr, c, f, bytes_reservados);
     generacion_inicial_aleatorio(ptr, c, f);
 
-    procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec);
-    puntaje(total_fichas_elim, total_comb_detec);
+    procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec, cascadas, puntaje_total = 0);
+
+    puntaje(total_fichas_elim, total_comb_detec, cascadas, cant_elim, puntaje_total = 0);
 }
 
 void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, unsigned int c, unsigned int f){
@@ -382,13 +400,14 @@ void entrada_usuario(unsigned short int &opc,unsigned int &nc,unsigned int &nf, 
     }
 }
 
-void quitar_ficha(unsigned char *ptr, unsigned int nc, unsigned int nf, unsigned int c, unsigned int f){
+void quitar_ficha(unsigned char *ptr, unsigned int nc, unsigned int nf, unsigned int c, unsigned int f, unsigned int &cant_elim){
     nc--; nf--;
     setFicha(ptr, (nf*c)+nc, 0);
     for(unsigned int i=nf; i>0; i--){
         setFicha(ptr, (i*c)+nc, getFicha(ptr,((i-1)*c)+nc));
     }
     setFicha(ptr, nc, generar_ficha(1,6));
+    cant_elim++;
 }
 
 void suficiente_espacio(unsigned char *ptr, unsigned int c, unsigned int f, unsigned int bytes_reservados, bool &disponibilidad_bytes, unsigned int &bytes_necesarios){
@@ -522,17 +541,19 @@ void espacio_65(unsigned char*&ptr, unsigned int &bytes_reservados, unsigned int
     }
 }
 
-void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&ptr, unsigned int &bytes_reservados, unsigned int &total_fichas_elim, unsigned int &total_comb_detec){
+void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&ptr, unsigned int &bytes_reservados, unsigned int &total_fichas_elim,
+           unsigned int &total_comb_detec, unsigned int &cascadas, unsigned int &cant_elim, unsigned int &puntaje_total){
+
     unsigned short int opc;
     unsigned int nc, nf;
     impresion_tablero_bits(ptr, c, f);
     impresion_tablero(ptr, c, f);
     entrada_usuario(opc, nc, nf, c, f);
-    //puntaje(total_fichas_elim, total_comb_detec);
 
     switch(opc){
     case 1:
-        quitar_ficha(ptr, nc, nf, c, f);
+        quitar_ficha(ptr, nc, nf, c, f, cant_elim);
+        cascadas = 0;
         break;
     case 2:
         agregar_columna(ptr, nc, c, f, bytes_reservados);
@@ -552,7 +573,7 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
         salir_juego = true;
         break;
     }
-    procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec);
-    puntaje(total_fichas_elim, total_comb_detec);
+    procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec, cascadas, puntaje_total);
+    puntaje(total_fichas_elim, total_comb_detec, cascadas, cant_elim, puntaje_total);
     cout << endl;
 }

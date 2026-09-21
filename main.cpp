@@ -13,6 +13,10 @@ int main(){
 
         unsigned int total_fichas_elim = 0;
         unsigned int total_comb_detec = 0;
+        unsigned int cascadas = 0;
+        unsigned int cant_elim= 0;
+        unsigned int puntaje_total = 0;
+
         cout << "BIENVENIDO A SWEET CRUSH" << endl;
         cout << "1) Iniciar juego" << endl;
         cout << "2) Salir" << endl << endl;
@@ -24,9 +28,9 @@ int main(){
         case 1:
             unsigned int c,f;
             salir_juego = false;
-            inicializacion_juego(c, f, ptr, bytes_reservados, total_fichas_elim, total_comb_detec);
+            inicializacion_juego(c, f, ptr, bytes_reservados, total_fichas_elim, total_comb_detec, cascadas, cant_elim, puntaje_total);
             while(!salir_juego){
-                turno(salir_juego, c, f, ptr, bytes_reservados, total_fichas_elim, total_comb_detec);
+                turno(salir_juego, c, f, ptr, bytes_reservados, total_fichas_elim, total_comb_detec, cascadas, cant_elim, puntaje_total);
             }
             delete ptr;
             ptr = nullptr;
