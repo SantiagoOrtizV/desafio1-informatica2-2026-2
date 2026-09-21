@@ -549,11 +549,11 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
     impresion_tablero_bits(ptr, c, f);
     impresion_tablero(ptr, c, f);
     entrada_usuario(opc, nc, nf, c, f);
-
+    cascadas = 0;
     switch(opc){
     case 1:
         quitar_ficha(ptr, nc, nf, c, f, cant_elim);
-        cascadas = 0;
+
         break;
     case 2:
         agregar_columna(ptr, nc, c, f, bytes_reservados);
@@ -571,7 +571,8 @@ void turno(bool &salir_juego, unsigned int &c, unsigned int &f, unsigned char *&
         break;
     case 6:
         salir_juego = true;
-        break;
+        puntaje(total_fichas_elim, total_comb_detec, cascadas, cant_elim, puntaje_total);
+        return;
     }
     procesar_combinaciones(ptr, f, c, total_fichas_elim, total_comb_detec, cascadas, puntaje_total);
     puntaje(total_fichas_elim, total_comb_detec, cascadas, cant_elim, puntaje_total);

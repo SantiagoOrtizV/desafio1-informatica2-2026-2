@@ -25,6 +25,7 @@ int main(){
         cout << endl;
 
         switch(opc){
+
         case 1:
             unsigned int c,f;
             salir_juego = false;
